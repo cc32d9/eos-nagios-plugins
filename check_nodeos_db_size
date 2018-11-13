@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use JSON;
+use LWP::UserAgent;
+    
+my $url;
+my $warn_limit = 70;
+my $crit_limit = 80;
+
+
+my $ok = GetOptions
+    ('url=s'     => \$url,
+     'warn=f'    => \$warn_limit,
+     'crit=f'    => \$crit_limit);
+
+
+if( not $ok or scalar(@ARGV) > 0 or not $url )
+{
+    print STDERR "Usage: $0 --url=URL [options...]\n",
+    "The script checks the output of eosio::db_size_api_plugin.\n",
+    "Options:\n",
+    "  --url=URL          EOS API endpoint\n",
+    "  --warn=X           \[$warn_limit\] warning level, percent\n",
+    "  --crit=X           \[$crit_limit\] critical level, percent\n";
+    
+    exit 1;
+}
+
+
+my $ua = LWP::UserAgent->new
+    (keep_alive => 1,
+     ssl_opts => { verify_hostname => 0 });
+$ua->timeout(10);
+$ua->env_proxy();
+
+my $res = $ua->get($url . '/v1/db_size/get');
+
+if( not $res->is_success )
+{
+    bailout('HTTP error', $res->decoded_content);
+}
+
+my $content = $res->decoded_content;
+my $result = eval { decode_json($content) };
+bailout('JSON parsing error', $@) if $@;
+
+my $bytes_limit = $result->{'size'};
+my $bytes_used = $result->{'used_bytes'};
+my $percent_used = $bytes_used * 100.0 / $bytes_limit;
+
+my $exitcode = 0;
+my $status = 'OK';
+if( $percent_used > $crit_limit )
+{
+    $exitcode = 2;
+    $status = 'CRITICAL';
+}
+elsif( $percent_used > $warn_limit )
+{
+    $exitcode = 1;
+    $status = 'WARNING';
+}   
+
+printf("EOS_DB %s - %.2f%% used|percent_used=%.2f bytes_used=%d\n", $status, $percent_used, $percent_used, $bytes_used);
+exit($exitcode);
+
+
+
+sub bailout
+{
+    my ($error, $msg) = @_;
+    printf("%s: %s\n", $error, $msg);
+    exit(2);
+}
+
+    
+    
