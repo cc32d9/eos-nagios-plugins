@@ -1,0 +1,83 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use JSON;
+use LWP::UserAgent;
+    
+my $url;
+my $network = 'eos';
+my $warn_limit = 120;
+my $crit_limit = 180;
+
+
+my $ok = GetOptions
+    ('url=s'     => \$url,
+     'warn=f'    => \$warn_limit,
+     'crit=f'    => \$crit_limit);
+
+
+if( not $ok or scalar(@ARGV) > 0 or not $url )
+{
+    print STDERR "Usage: $0 --url=URL [options...]\n",
+    "The script checks the output of EOS Light API:\n",
+    "https://github.com/cc32d9/eos_zmq_light_api\n",
+    "Options:\n",
+    "  --url=URL          EOS Light API endpoint\n",
+    "  --network=NAME     \[$network\] EOS network name\n",
+    "  --warn=X           \[$warn_limit\] warning delay, seconds\n",
+    "  --crit=X           \[$crit_limit\] critical delay, seconds\n";
+    
+    exit 1;
+}
+
+
+my $ua = LWP::UserAgent->new
+    (keep_alive => 1,
+     ssl_opts => { verify_hostname => 0 });
+$ua->timeout(10);
+$ua->env_proxy();
+
+my $res = $ua->get($url . '/api/sync/' . $network);
+
+if( not $res->is_success )
+{
+    bailout('HTTP error', $res->decoded_content);
+}
+
+my $content = $res->decoded_content;
+my ($delay, $code) = split(/\s+/, $content);
+if( not defined($delay) or $delay eq '' or $delay !~ /^\d+$/ )
+{
+    bailout('Invalid API output', $content);
+}
+
+
+my $exitcode = 0;
+my $status = 'OK';
+if( $delay > $crit_limit )
+{
+    $exitcode = 2;
+    $status = 'CRITICAL';
+}
+elsif( $delay > $warn_limit )
+{
+    $exitcode = 1;
+    $status = 'WARNING';
+}   
+
+printf("LIGHTAPI_SYNC %s - %ds delay|delay=%d\n", $status, $delay, $delay);
+exit($exitcode);
+
+
+
+sub bailout
+{
+    my ($error, $msg) = @_;
+    printf("%s: %s\n", $error, $msg);
+    exit(2);
+}
+
+    
+    

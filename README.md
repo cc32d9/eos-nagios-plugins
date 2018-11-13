@@ -19,6 +19,9 @@ git clone https://github.com/cc32d9/eos-nagios-plugins.git /opt/eos-nagios-plugi
 
 ln -s /opt/eos-nagios-plugins/check_nodeos_block_time /usr/lib/nagios/plugins/
 ln -s /opt/eos-nagios-plugins/check_nodeos_db_size /usr/lib/nagios/plugins/
+
+# if you need to monitor Light API status:
+ln -s /opt/eos-nagios-plugins/check_lightapi_sync /usr/lib/nagios/plugins/
 ```
 
 
@@ -38,9 +41,18 @@ Check nodeos shared memory usage:
 EOS_DB OK - 8.86% used|percent_used=8.86 bytes_used=3042721344
 ```
 
+Light API sync status (https://github.com/cc32d9/eos_zmq_light_api)
+
+```
+/usr/lib/nagios/plugins/check_lightapi_sync --url=http://127.0.0.1
+LIGHTAPI_SYNC CRITICAL - 46068s delay|delay=46068
+```
 
 
 
+## Acknowledgements
+
+Development of `check_nodeos_block_time` was sponsored by EOSBET.io.
 
 
 ## Copyright and License
