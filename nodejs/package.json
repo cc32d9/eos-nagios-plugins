@@ -1,0 +1,30 @@
+{
+   "name": "eos-nagios-plugins-nodejs",
+   "description": "Nagios plugins for EOS blockchain",
+   "version": "0.0.1",
+   "contributors": [
+      {
+         "name": "orange1337"
+      },
+      {
+         "name": "cc32d9"
+      }
+   ],
+   "repository": {
+      "type": "git",
+      "url": "git@github.com:cc32d9/eos-nagios-plugins.git"
+   },
+   "license": "Apache",
+   "preferGlobal": true,
+   "bin": {
+      "check_eos_watchdoggiee": "./bin/check_eos_watchdoggiee"
+   },
+   "engines": {
+      "node": ">= 0.8.0"
+   },
+   "dependencies": {
+      "commander": "^2.19.0",
+      "eosjs": "^16.0.9"
+   },
+   "keywords": []
+}

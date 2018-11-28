@@ -12,13 +12,18 @@ curl -sSL https://packages.icinga.com/icinga.key | sudo apt-key add -
 apt update && apt install -y icinga2 nagios-plugins-contrib;
 
 
+## Install nodejs from https://nodejs.org/en/download/
+
 apt install -y git libdatetime-format-iso8601-perl libjson-xs-perl libjson-perl libwww-perl
 
 git clone https://github.com/cc32d9/eos-nagios-plugins.git /opt/eos-nagios-plugins
 
+cd /opt/eos-nagios-plugins/nodejs
+npm install
 
 ln -s /opt/eos-nagios-plugins/check_nodeos_block_time /usr/lib/nagios/plugins/
 ln -s /opt/eos-nagios-plugins/check_nodeos_db_size /usr/lib/nagios/plugins/
+ln -s /opt/eos-nagios-plugins/bin/check_eos_watchdoggiee /usr/lib/nagios/plugins/
 
 # if you need to monitor Light API status:
 ln -s /opt/eos-nagios-plugins/check_lightapi_sync /usr/lib/nagios/plugins/
@@ -41,6 +46,14 @@ Check nodeos shared memory usage:
 EOS_DB OK - 8.86% used|percent_used=8.86 bytes_used=3042721344
 ```
 
+Send a transaction to `watchdoggiee` smart contract and check the
+execution time:
+```
+/usr/lib/nagios/plugins/check_eos_watchdoggiee --priv-key=5JwoX... --kv-key=55 --account=MYACCOUNT \
+ --url-submit=http://api.eosgeneva.io --url-query=http://api.eostribe.io
+```
+
+
 Light API sync status (https://github.com/cc32d9/eos_zmq_light_api)
 
 ```
@@ -56,6 +69,8 @@ Development of `check_nodeos_block_time` was sponsored by EOSBET.io.
 
 
 ## Copyright and License
+
+`check_eos_watchdoggiee`: Copyright 2018 orange13371@gmail.com
 
 Copyright 2018 cc32d9@gmail.com
 

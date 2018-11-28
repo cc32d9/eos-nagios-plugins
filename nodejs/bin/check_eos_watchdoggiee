@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+
+const watchdoggiee = require('../lib/watchdoggiee.js');
+const program           = require('commander');
+const pkg 	        = require('../package.json');
+
+program
+    .version(pkg.version, '-v, --version')
+    .option('--priv-key [value]', 'private key')
+    .option('--kv-key <n>', 'setkv numeric key', parseInt)
+    .option('--url-submit [value]', 'API URL for sending transactoin')
+    .option('--account [value]', 'Transaction sender account')
+    .option('--url-query [value]', 'API URL for querying results')
+    .option('--chain [value]', 'chain ID')
+    .option('--warn <n>', 'warning delay, seconds', parseFloat)
+    .option('--crit <n>', 'critical delay, seconds', parseFloat)
+    .parse(process.argv);
+
+if (program.privKey && program.account && program.kvKey) {
+
+    if ( ! program.chain ) {
+        program.chain = "aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906";
+    }
+    
+    if ( ! program.urlSubmit ) {
+        program.urlSubmit = 'http://api.eostribe.io';
+    }
+
+    if ( ! program.urlQuery ) {
+        program.urlQuery = 'http://api.eostribe.io';
+    }
+
+    if ( ! program.warn ) {
+        program.warn = 2;
+    }
+
+    if ( ! program.crit ) {
+        program.crit = 5;
+    }
+    
+    watchdoggiee.check_eos_watchdoggiee(program, (exitcode, text) => {
+    	console.log(text);
+        process.exit(exitcode);
+    });
+} else {
+    program.help();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ Local Variables:
+ mode: javascript
+ indent-tabs-mode: nil
+ End:
+*/
