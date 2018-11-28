@@ -23,7 +23,7 @@ npm install
 
 ln -s /opt/eos-nagios-plugins/check_nodeos_block_time /usr/lib/nagios/plugins/
 ln -s /opt/eos-nagios-plugins/check_nodeos_db_size /usr/lib/nagios/plugins/
-ln -s /opt/eos-nagios-plugins/bin/check_eos_watchdoggiee /usr/lib/nagios/plugins/
+ln -s /opt/eos-nagios-plugins/nodejs/bin/check_eos_watchdoggiee /usr/lib/nagios/plugins/
 
 # if you need to monitor Light API status:
 ln -s /opt/eos-nagios-plugins/check_lightapi_sync /usr/lib/nagios/plugins/
