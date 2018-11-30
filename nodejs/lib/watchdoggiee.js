@@ -91,7 +91,8 @@ customFunctions.check_eos_watchdoggiee = (options, callback) => {
                          `REQTIME ${status} - ${submitdiff}s submit, ${querydiff}s query|diff_submit=${submitdiff} diff_query=${querydiff}\n`);
                     }
                     else if ( now > timeMAX ){
-                        return callback(2, `REQTIME CRITICAL - no update received after ${timeMAX}s`);
+                        let intvl = (now - timeMAX)/1000.0;
+                        return callback(2, `REQTIME CRITICAL - no update received from ${options.urlQuery} after ${intvl}s`);
                     }
                     else {
                         setTimeout(function() {checkReqTime(timeMAX, callback)}, 200);
