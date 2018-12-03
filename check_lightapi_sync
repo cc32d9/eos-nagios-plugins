@@ -15,7 +15,8 @@ my $crit_limit = 180;
 my $ok = GetOptions
     ('url=s'     => \$url,
      'warn=f'    => \$warn_limit,
-     'crit=f'    => \$crit_limit);
+     'crit=f'    => \$crit_limit,
+     'network=s' => \$network);
 
 
 if( not $ok or scalar(@ARGV) > 0 or not $url )
@@ -67,7 +68,7 @@ elsif( $delay > $warn_limit )
     $status = 'WARNING';
 }   
 
-printf("LIGHTAPI_SYNC %s - %ds delay|delay=%d\n", $status, $delay, $delay);
+printf("LIGHTAPI_SYNC %s - %s %ds delay|delay=%d\n", $status, $network, $delay, $delay);
 exit($exitcode);
 
 
