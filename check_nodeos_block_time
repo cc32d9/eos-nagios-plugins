@@ -53,10 +53,11 @@ my $block_time = $result->{'head_block_time'};
 bailout('Error', 'Cannot find head_block_time in the responce') unless defined($block_time);
 
 my $bt = eval {DateTime::Format::ISO8601->parse_datetime($block_time)};
+$bt->set_time_zone('UTC');
 bailout('Date/time parsing error', $@) if $@;
 
-my $now = DateTime->from_epoch('epoch' => time());
-my $diff = $now->subtract_datetime($bt)->in_units('nanoseconds')/1.0e9;
+my $now = DateTime->now('time_zone' => 'UTC');
+my $diff = $now->subtract_datetime_absolute($bt)->in_units('nanoseconds')/1.0e9;
 
 my $exitcode = 0;
 my $status = 'OK';
