@@ -5,8 +5,8 @@ use warnings;
 use Getopt::Long;
 use JSON;
 use LWP::UserAgent;
+use DateTime;
 use DateTime::Format::ISO8601;
-use Time::HiRes qw(time);
     
 my $url;
 my $warn_limit = 2.0;
