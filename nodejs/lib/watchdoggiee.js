@@ -2,9 +2,10 @@
  * Created by github@orange1337
  */
 
-const http = require("http");
-const https = require("https");
-const eosjs = require("eosjs");
+const { Api, JsonRpc, RpcError } = require('eosjs');
+const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig');
+const fetch = require('node-fetch');
+const { TextEncoder, TextDecoder } = require('util');
 
 const contract = "watchdoggiee";
 
@@ -15,23 +16,13 @@ process.on('uncaughtException', (err) => {
 });
 
 
-customFunctions.check_eos_watchdoggiee = (options, callback) => {    
-    let submitapi = new eosjs({
-        chainId: options.chain,
-        httpEndpoint: options.urlSubmit,
-        keyProvider: options.privKey,
-        expireInSeconds: 30,
-        broadcast: true,
-        debug: false,
-        sign: true
-    });
+customFunctions.check_eos_watchdoggiee = (options, callback) => {
+    const sigProvider = new JsSignatureProvider([options.privKey]);
+    const rpcSubmit = new JsonRpc(options.urlSubmit, { fetch });
+    const apiSubmit = new Api({rpc: rpcSubmit, signatureProvider: sigProvider,
+                               textDecoder: new TextDecoder(), textEncoder: new TextEncoder()});
 
-    let queryapi = new eosjs({
-        chainId: options.chain,
-        httpEndpoint: options.urlQuery,
-        expireInSeconds: 30,
-        debug: false
-    });
+    const rpcQuery = new JsonRpc(options.urlQuery, { fetch });
     
     let timeStart = +new Date();
     let now = new Date(); 
@@ -39,23 +30,42 @@ customFunctions.check_eos_watchdoggiee = (options, callback) => {
                             now.getUTCDate(),  now.getUTCHours(),
                             now.getUTCMinutes(), now.getUTCSeconds(), now.getMilliseconds());
 
-    submitapi.contract(contract).then(myaccount => {
-        myaccount.setkv( options.account, options.kvKey, nowUTC, 
-                         { authorization: `${options.account}@watchdog`,
-                           broadcast: true,
-                           sign: true
-                         }, 
-                         (err, result) => {
-                             if (err){
-                                 return callback(2, 'CRITICICAL - ' + err);
-                             }
-                             let timeMAX = +new Date() + (options.crit*2) * 1000;
-                             checkReqTime(timeMAX, callback);        
-                         });
-    });
+    setTimeout(
+        () => { callback(1, 'WARNING - Timeout'); },
+        (options.crit*3) * 1000,
+    );
+    
+    (async () => {
+        try {
+            const result = await apiSubmit.transact({
+                actions: [{
+                    account: contract,
+                    name: 'setkv',
+                    authorization: [{
+                        actor: options.account,
+                        permission: 'watchdog',
+                    }],
+                    data: {
+                        owner: options.account,
+                        key: options.kvKey,
+                        val: nowUTC,
+                    },
+                }]
+            },{
+                blocksBehind: 3,
+                expireSeconds: 30,
+            });
 
+            let timeMAX = +new Date() + (options.crit*2) * 1000;
+            checkReqTime(timeMAX, callback);
+        } catch (e) {
+            return callback(1, 'WARNING - Exception: ' + e);
+        }
+    })();
+
+    
     function checkReqTime(timeMAX, callback){
-        queryapi.getTableRows({
+        rpcQuery.get_table_rows({
             json: true,
             code: contract,
             scope: options.account,
@@ -103,7 +113,7 @@ customFunctions.check_eos_watchdoggiee = (options, callback) => {
                 }
             })
             .catch(err => {
-                return callback(2, `CRITICAL - ` + err);
+                return callback(1, `WARNING - ` + err);
             });     
     }
 };
