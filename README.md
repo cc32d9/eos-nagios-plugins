@@ -23,6 +23,7 @@ npm install
 
 ln -s /opt/eos-nagios-plugins/check_nodeos_block_time /usr/lib/nagios/plugins/
 ln -s /opt/eos-nagios-plugins/check_nodeos_db_size /usr/lib/nagios/plugins/
+ln -s /opt/eos-nagios-plugins/check_account_cpu /usr/lib/nagios/plugins/
 ln -s /opt/eos-nagios-plugins/nodejs/bin/check_eos_watchdoggiee /usr/lib/nagios/plugins/
 
 # if you need to monitor Light API status:
@@ -45,6 +46,15 @@ Check nodeos shared memory usage:
 /usr/lib/nagios/plugins/check_nodeos_db_size --url=http://127.0.0.1:8888
 EOS_DB OK - 8.86% used|percent_used=8.86 bytes_used=3042721344
 ```
+
+Check account CPU allowance:
+
+```
+/usr/lib/nagios/plugins/check_account_cpu --url https://mainnet.eosamsterdam.net --acc=thekarmadapp
+ACCOUNT_CPU CRITICAL - 413.72% used|percent_used=413.72
+```
+
+
 
 Send a transaction to `watchdoggiee` smart contract and check the
 execution time:
