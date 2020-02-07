@@ -1,0 +1,97 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use JSON;
+use LWP::UserAgent;
+    
+my $url;
+my $network;
+my $contract;
+my $currency;
+my $account;
+my $warn_limit;
+my $crit_limit;
+
+
+my $ok = GetOptions
+    ('url=s'     => \$url,
+     'network=s' => \$network,
+     'contract=s' => \$contract,
+     'currency=s' => \$currency,
+     'account=s'  => \$account,
+     'warn=f'    => \$warn_limit,
+     'crit=f'    => \$crit_limit,
+     );
+
+
+if( not $ok or scalar(@ARGV) > 0 or not $url or not $network or not $contract
+    or not $currency or not $account or not $crit_limit )
+{
+    print STDERR "Usage: $0 --url=URL --network=X --contract=Y --account=Z --crit=N [options...]\n",
+    "The script checks accoutn balance using EOSIO Light API\n",
+    "Options:\n",
+    "  --url=URL          EOSIO Light API endpoint\n",
+    "  --network=NAME     EOSIO network name\n",
+    "  --contract=NAME    token contract\n",
+    "  --currency=NAME    token symbol\n",
+    "  --account=NAME     holder account\n",
+    "  --warn=X           \[crit*2\] warning low balance\n",
+    "  --crit=X           critical low balance\n";
+    
+    exit 1;
+}
+
+if( not defined($warn_limit) )
+{
+    $warn_limit = 2 * $crit_limit;
+}
+
+my $ua = LWP::UserAgent->new
+    (keep_alive => 1,
+     ssl_opts => { verify_hostname => 0 });
+$ua->timeout(10);
+$ua->env_proxy();
+
+my $res = $ua->get($url . '/api/tokenbalance/' . join('/', $network, $account, $contract, $currency));
+
+if( not $res->is_success )
+{
+    bailout('HTTP error', $res->decoded_content);
+}
+
+my $balance = $res->decoded_content;
+if( not defined($balance) or $balance !~ /^\d[0-9.]*$/ )
+{
+    bailout('Invalid API output', $balance);
+}
+
+
+my $exitcode = 0;
+my $status = 'OK';
+if( $balance < $crit_limit )
+{
+    $exitcode = 2;
+    $status = 'CRITICAL';
+}
+elsif( $balance < $warn_limit )
+{
+    $exitcode = 1;
+    $status = 'WARNING';
+}   
+
+printf("BALANCE %s - %s %s %s|balance=%s\n", $status, $account, $balance, $currency, $balance);
+exit($exitcode);
+
+
+
+sub bailout
+{
+    my ($error, $msg) = @_;
+    printf("%s: %s\n", $error, $msg);
+    exit(2);
+}
+
+    
+    
