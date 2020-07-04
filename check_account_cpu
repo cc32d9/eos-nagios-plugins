@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use JSON;
+use LWP::UserAgent;
+    
+my $url;
+my $acc;
+my $warn_limit = 80;
+my $crit_limit = 95;
+
+
+my $ok = GetOptions
+    ('url=s'     => \$url,
+     'acc=s'     => \$acc,
+     'warn=f'    => \$warn_limit,
+     'crit=f'    => \$crit_limit);
+
+
+if( not $ok or scalar(@ARGV) > 0 or not $url )
+{
+    print STDERR "Usage: $0 --url=URL --acc=ACCOUNT [options...]\n",
+    "The script checks the output of eosio::db_size_api_plugin.\n",
+    "Options:\n",
+    "  --url=URL          EOSIO API endpoint\n",
+    "  --acc=ACCOUNT      EOSIO account name\n",
+    "  --warn=X           \[$warn_limit\] warning level, percent\n",
+    "  --crit=X           \[$crit_limit\] critical level, percent\n";
+    
+    exit 1;
+}
+
+
+my $ua = LWP::UserAgent->new
+    (keep_alive => 1,
+     ssl_opts => { verify_hostname => 0 });
+$ua->timeout(10);
+$ua->env_proxy();
+
+my $req = HTTP::Request->new( 'POST', $url . '/v1/chain/get_account' );    
+$req->header( 'Content-Type' => 'application/json' );
+$req->content(encode_json({'account_name' => $acc}));
+
+my $res = $ua->request($req);
+
+if( not $res->is_success )
+{
+    bailout('HTTP error', $res->decoded_content);
+}
+
+my $content = $res->decoded_content;
+my $result = eval { decode_json($content) };
+bailout('JSON parsing error', $@) if $@;
+
+my $cpu = $result->{'cpu_limit'};
+
+my $percent_used = $cpu->{'used'} * 100.0 / $cpu->{'max'};
+
+my $exitcode = 0;
+my $status = 'OK';
+if( $percent_used > $crit_limit )
+{
+    $exitcode = 2;
+    $status = 'CRITICAL';
+}
+elsif( $percent_used > $warn_limit )
+{
+    $exitcode = 1;
+    $status = 'WARNING';
+}   
+
+printf("ACCOUNT_CPU %s - %.2f%% used|percent_used=%.2f\n", $status, $percent_used, $percent_used);
+exit($exitcode);
+
+
+
+sub bailout
+{
+    my ($error, $msg) = @_;
+    printf("%s: %s\n", $error, $msg);
+    exit(2);
+}
+
+    
+    
