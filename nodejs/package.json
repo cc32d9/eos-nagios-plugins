@@ -24,7 +24,7 @@
    },
    "dependencies": {
       "commander": "^2.19.0",
-      "node-fetch": ">= 2.6.0",
+      "node-fetch": ">= 2.6.1",
       "eosjs": "^20.0.0"
    },
    "keywords": []
