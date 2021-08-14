@@ -1,0 +1,27 @@
+{
+    "name": "eos-nagios-plugins-ship",
+    "description": "Nagios plugins for EOSIO blockchain",
+    "version": "0.0.1",
+    "contributors": [
+        {
+            "name": "cc32d9"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:cc32d9/eos-nagios-plugins.git"
+    },
+    "license": "Apache-2.0",
+    "preferGlobal": true,
+    "bin": {
+        "check_eosio_ship": "./check_eosio_ship"
+    },
+    "dependencies": {
+        "eosjs": "^21.0.3",
+        "text-encoding": "^0.7.0",
+        "ws": "^6.1.3",
+        "commander": ">= 8.1.0",
+        "node-fetch": ">= 2.6.0"
+    },
+    "keywords": []
+}

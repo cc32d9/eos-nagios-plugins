@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+
+const program           = require('commander');
+const WebSocket         = require('ws');
+const { Serialize }     = require('eosjs');
+const { TextDecoder, TextEncoder } = require('text-encoding');
+const fetch = require('node-fetch');
+
+program
+    .requiredOption('--url-ws [value]', 'EOSIO state history websocket URL')
+    .requiredOption('--url-api [value]', 'EOSIO API URL')
+    .option('--warn <n>', 'warning delay, seconds', parseFloat, 5)
+    .option('--crit <n>', 'critical delay, seconds', parseFloat, 10)
+    .parse(process.argv);
+
+const options = program.opts();
+
+
+
+var types;
+var abi_received = false;
+
+const ws = new WebSocket(options.urlWs, { perMessageDeflate: false });
+ws.on('error', (e) => {console.error(`Websocket error`, e)});
+
+ws.on('message', data => onMessage(data));
+
+function report_result(exitcode, text) {
+    console.log(text);
+    process.exit(exitcode);
+    ws.close();
+}
+
+
+function onMessage(data) {
+    if( !abi_received ) {
+        let abi = JSON.parse(data);
+        types = Serialize.getTypesFromAbi(Serialize.createInitialTypes(), abi);
+        abi_received = true;
+        send(['get_status_request_v0', {}]);
+    }
+    else {
+        const [type, response] = deserialize('result', data);
+        if( type == 'get_status_result_v0' ) {
+            let head = response.head.block_num;
+            if( response.trace_end_block != head+1 || response.chain_state_end_block != head+1 ) {
+                report_result(2, 'CRITICAL - state history corrupted');
+            }
+
+            fetch(options.urlApi + '/v1/chain/get_info', {
+                method: 'post',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(res => res.json())
+                .then((infodata) => {
+                    let diff = (infodata.head_block_num - head) / 2;
+                    let status = 'OK';
+                    let exitcode = 0;
+                    if ( diff > options.crit ) {
+                        status = 'CRITICAL';
+                        exitcode = 2;
+                    }
+                    else if ( diff > options.warn ) {
+                        status = 'WARNING';
+                        exitcode = 1;
+                    }
+                    
+                    report_result(exitcode, `SHIP ${status} - ${diff}s delay |delay=${diff}`);
+                });
+        }
+    }
+}
+
+
+function send(request) {
+    ws.send(serialize('request', request));
+}
+
+function serialize(type, value) {
+    const buffer = new Serialize.SerialBuffer({ textEncoder: new TextEncoder, textDecoder: new TextDecoder });
+    Serialize.getType(types, type).serialize(buffer, value);
+    return buffer.asUint8Array();
+}
+
+function deserialize(type, array) {
+    const buffer = new Serialize.SerialBuffer({ textEncoder: new TextEncoder, textDecoder: new TextDecoder, array });
+    let result = Serialize.getType(types, type).deserialize(buffer, new Serialize.SerializerState({ bytesAsUint8Array: true }));
+    if (buffer.readPos != array.length)
+        throw new Error('oops: ' + type); // todo: remove check
+    return result;
+}
+
+
+
+
+
+
+/*
+ Local Variables:
+ mode: javascript
+ indent-tabs-mode: nil
+ End:
+*/

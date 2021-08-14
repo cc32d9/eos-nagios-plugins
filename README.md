@@ -1,4 +1,4 @@
-# Nagios plugins for EOS blockchain
+# Nagios plugins for EOSIO blockchains
 
 ## Installation
 
@@ -18,13 +18,13 @@ apt install -y git libdatetime-format-iso8601-perl libjson-xs-perl libjson-perl 
 
 git clone https://github.com/cc32d9/eos-nagios-plugins.git /opt/eos-nagios-plugins
 
-cd /opt/eos-nagios-plugins/nodejs
+cd /opt/eos-nagios-plugins/ship
 npm install
 
 ln -s /opt/eos-nagios-plugins/check_nodeos_block_time /usr/lib/nagios/plugins/
 ln -s /opt/eos-nagios-plugins/check_nodeos_db_size /usr/lib/nagios/plugins/
 ln -s /opt/eos-nagios-plugins/check_account_cpu /usr/lib/nagios/plugins/
-ln -s /opt/eos-nagios-plugins/nodejs/bin/check_eos_watchdoggiee /usr/lib/nagios/plugins/
+ln -s /opt/eos-nagios-plugins/ship/check_eosio_ship /usr/lib/nagios/plugins/
 
 # if you need to monitor Light API status:
 ln -s /opt/eos-nagios-plugins/check_lightapi_sync /usr/lib/nagios/plugins/
@@ -55,12 +55,10 @@ ACCOUNT_CPU CRITICAL - 413.72% used|percent_used=413.72
 ```
 
 
+Check state history health:
 
-Send a transaction to `watchdoggiee` smart contract and check the
-execution time:
 ```
-/usr/lib/nagios/plugins/check_eos_watchdoggiee --priv-key=5JwoX... --kv-key=55 --account=MYACCOUNT \
- --url-submit=http://api.eosgeneva.io --url-query=http://api.eostribe.io
+/usr/lib/nagios/plugins/check_eosio_ship --url-ws=ws://10.0.0.100:8080 --url-api=https://wax.eu.eosamsterdam.net
 ```
 
 
