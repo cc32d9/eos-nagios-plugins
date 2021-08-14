@@ -26,9 +26,9 @@ ws.on('error', (e) => {console.error(`Websocket error`, e)});
 ws.on('message', data => onMessage(data));
 
 function report_result(exitcode, text) {
+    ws.close();
     console.log(text);
     process.exit(exitcode);
-    ws.close();
 }
 
 
