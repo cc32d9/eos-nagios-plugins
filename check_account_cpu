@@ -8,7 +8,7 @@ use LWP::UserAgent;
     
 my $url;
 my $acc;
-my $warn_limit = 80;
+my $warn_limit;
 my $crit_limit = 95;
 
 
@@ -19,14 +19,14 @@ my $ok = GetOptions
      'crit=f'    => \$crit_limit);
 
 
-if( not $ok or scalar(@ARGV) > 0 or not $url )
+if( not $ok or scalar(@ARGV) > 0 or not $url or not $acc )
 {
     print STDERR "Usage: $0 --url=URL --acc=ACCOUNT [options...]\n",
     "The script checks the output of eosio::db_size_api_plugin.\n",
     "Options:\n",
     "  --url=URL          EOSIO API endpoint\n",
     "  --acc=ACCOUNT      EOSIO account name\n",
-    "  --warn=X           \[$warn_limit\] warning level, percent\n",
+    "  --warn=X           optional warning level, percent\n",
     "  --crit=X           \[$crit_limit\] critical level, percent\n";
     
     exit 1;
@@ -65,7 +65,7 @@ if( $percent_used > $crit_limit )
     $exitcode = 2;
     $status = 'CRITICAL';
 }
-elsif( $percent_used > $warn_limit )
+elsif( defined($warn_limit) and $percent_used > $warn_limit )
 {
     $exitcode = 1;
     $status = 'WARNING';

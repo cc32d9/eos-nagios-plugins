@@ -7,7 +7,7 @@ use JSON;
 use LWP::UserAgent;
     
 my $url;
-my $warn_limit = 70;
+my $warn_limit;
 my $crit_limit = 80;
 
 
@@ -23,7 +23,7 @@ if( not $ok or scalar(@ARGV) > 0 or not $url )
     "The script checks the output of eosio::db_size_api_plugin.\n",
     "Options:\n",
     "  --url=URL          EOS API endpoint\n",
-    "  --warn=X           \[$warn_limit\] warning level, percent\n",
+    "  --warn=X           optional warning level, percent\n",
     "  --crit=X           \[$crit_limit\] critical level, percent\n";
     
     exit 1;
@@ -58,7 +58,7 @@ if( $percent_used > $crit_limit )
     $exitcode = 2;
     $status = 'CRITICAL';
 }
-elsif( $percent_used > $warn_limit )
+elsif( defined($warn_limit) and $percent_used > $warn_limit )
 {
     $exitcode = 1;
     $status = 'WARNING';

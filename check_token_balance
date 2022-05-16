@@ -37,16 +37,12 @@ if( not $ok or scalar(@ARGV) > 0 or not $url or not $network or not $contract
     "  --contract=NAME    token contract\n",
     "  --currency=NAME    token symbol\n",
     "  --account=NAME     holder account\n",
-    "  --warn=X           \[crit*2\] warning low balance\n",
+    "  --warn=X           optional warning low balance\n",
     "  --crit=X           critical low balance\n";
     
     exit 1;
 }
 
-if( not defined($warn_limit) )
-{
-    $warn_limit = 2 * $crit_limit;
-}
 
 my $ua = LWP::UserAgent->new
     (keep_alive => 1,
@@ -75,7 +71,7 @@ if( $balance < $crit_limit )
     $exitcode = 2;
     $status = 'CRITICAL';
 }
-elsif( $balance < $warn_limit )
+elsif( defined($warn_limit) and $balance < $warn_limit )
 {
     $exitcode = 1;
     $status = 'WARNING';

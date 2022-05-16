@@ -8,7 +8,7 @@ use LWP::UserAgent;
     
 my $url;
 my $network = 'eos';
-my $warn_limit = 120;
+my $warn_limit;
 my $crit_limit = 180;
 
 
@@ -27,7 +27,7 @@ if( not $ok or scalar(@ARGV) > 0 or not $url )
     "Options:\n",
     "  --url=URL          EOS Light API endpoint\n",
     "  --network=NAME     \[$network\] EOS network name\n",
-    "  --warn=X           \[$warn_limit\] warning delay, seconds\n",
+    "  --warn=X           optional warning delay, seconds\n",
     "  --crit=X           \[$crit_limit\] critical delay, seconds\n";
     
     exit 1;
@@ -62,7 +62,7 @@ if( $delay > $crit_limit )
     $exitcode = 2;
     $status = 'CRITICAL';
 }
-elsif( $delay > $warn_limit )
+elsif( defined($warn_limit) and $delay > $warn_limit )
 {
     $exitcode = 1;
     $status = 'WARNING';
