@@ -5,27 +5,29 @@ use warnings;
 use Getopt::Long;
 use JSON;
 use LWP::UserAgent;
-    
+
 my $url;
 my $warn_limit = 70;
 my $crit_limit = 80;
-
+my $gigs;
 
 my $ok = GetOptions
     ('url=s'     => \$url,
      'warn=f'    => \$warn_limit,
-     'crit=f'    => \$crit_limit);
+     'crit=f'    => \$crit_limit,
+     'gigs'      => \$gigs);
 
 
 if( not $ok or scalar(@ARGV) > 0 or not $url )
 {
     print STDERR "Usage: $0 --url=URL [options...]\n",
-    "The script checks the output of eosio::db_size_api_plugin.\n",
-    "Options:\n",
-    "  --url=URL          EOS API endpoint\n",
-    "  --warn=X           \[$warn_limit\] warning level, percent\n",
-    "  --crit=X           \[$crit_limit\] critical level, percent\n";
-    
+        "The script checks the output of eosio::db_size_api_plugin.\n",
+        "Options:\n",
+        "  --url=URL          EOS API endpoint\n",
+        "  --warn=X           \[$warn_limit\] warning level, percent\n",
+        "  --crit=X           \[$crit_limit\] critical level, percent\n",
+        "  --gigs             critical and warning levels specified in gigabytes (1e9)\n";
+
     exit 1;
 }
 
@@ -47,24 +49,42 @@ my $content = $res->decoded_content;
 my $result = eval { decode_json($content) };
 bailout('JSON parsing error', $@) if $@;
 
+my $exitcode = 0;
+my $status = 'OK';
+
 my $bytes_limit = $result->{'size'};
 my $bytes_used = $result->{'used_bytes'};
 my $percent_used = $bytes_used * 100.0 / $bytes_limit;
+my $gig_free = ($bytes_limit - $bytes_used) / 1e9;
 
-my $exitcode = 0;
-my $status = 'OK';
-if( $percent_used > $crit_limit )
+if( $gigs )
 {
-    $exitcode = 2;
-    $status = 'CRITICAL';
+    if( $gig_free < $crit_limit )
+    {
+        $exitcode = 2;
+        $status = 'CRITICAL';
+    }
+    elsif( $gig_free < $warn_limit )
+    {
+        $exitcode = 1;
+        $status = 'WARNING';
+    }
 }
-elsif( $percent_used > $warn_limit )
+else
 {
-    $exitcode = 1;
-    $status = 'WARNING';
-}   
+    if( $percent_used > $crit_limit )
+    {
+        $exitcode = 2;
+        $status = 'CRITICAL';
+    }
+    elsif( $percent_used > $warn_limit )
+    {
+        $exitcode = 1;
+        $status = 'WARNING';
+    }
+}
 
-printf("EOS_DB %s - %.2f%% used|percent_used=%.2f bytes_used=%d\n", $status, $percent_used, $percent_used, $bytes_used);
+printf("EOS_DB %s - %.2f%% used|percent_used=%.2f gigs_free=%.1f\n", $status, $percent_used, $percent_used, $gig_free);
 exit($exitcode);
 
 
@@ -75,6 +95,3 @@ sub bailout
     printf("%s: %s\n", $error, $msg);
     exit(2);
 }
-
-    
-    
