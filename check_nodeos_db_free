@@ -8,7 +8,7 @@ use LWP::UserAgent;
 
 my $url;
 my $warn_limit;
-my $crit_limit;
+my $crit_limit = 5;
 
 my $ok = GetOptions
     ('url=s'     => \$url,
@@ -16,14 +16,14 @@ my $ok = GetOptions
      'crit=f'    => \$crit_limit);
 
 
-if( not $ok or scalar(@ARGV) > 0 or not $url or not $crit_limit )
+if( not $ok or scalar(@ARGV) > 0 or not $url )
 {
-    print STDERR "Usage: $0 --url=URL --crit=X [options...]\n",
+    print STDERR "Usage: $0 --url=URL [options...]\n",
         "The script checks the output of eosio::db_size_api_plugin.\n",
         "Options:\n",
         "  --url=URL          EOS API endpoint\n",
         "  --warn=X           optional warning level, free space in GB\n",
-        "  --crit=X           mandatory critical level, free space in GB\n";
+        "  --crit=X           \[$crit_limit\] critical level, free space in GB\n";
 
     exit 1;
 }
